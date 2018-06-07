@@ -4,14 +4,15 @@ const helmet = require("helmet");
 const cors = require("cors");
 const { check, validationResult } = require("express-validator/check");
 const axios = require("axios");
-const stripe = require("stripe")(
-	process.env.STRIPE_SECRET || "sk_test_Aq19layG1K6gw7Xj6gI2Thi1"
-);
 
 const app = express();
 
 /** Load .env file */
 require("dotenv").config();
+
+const stripe = require("stripe")(
+	process.env.STRIPE_SECRET || "sk_test_Aq19layG1K6gw7Xj6gI2Thi1"
+);
 
 app.use(helmet());
 app.use(bodyParser.urlencoded({ extended: true }));
