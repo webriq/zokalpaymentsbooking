@@ -115,7 +115,7 @@ app.post("/processPayment", validateFormRequest, async (req, res) => {
 			})
 			.then(() => {
 				// Send email
-				sendEmailInvoice({
+				sendEmail({
 					to: booking.email,
 					content: req.body,
 					res: res
@@ -154,6 +154,16 @@ app.post("/processPayment", validateFormRequest, async (req, res) => {
 		})
 		.then(charge => {
 			return saveToZokalSheet(booking, req.body, "completed");
+		})
+		.then(() => {
+			// Send email
+			sendEmail({
+				subject: `${process.env.APP_NAME} | New Booking Payment`,
+				headingText: "New Booking Payment",
+				to: booking.email,
+				content: req.body,
+				res: res
+			});
 		})
 		.then(() => {
 			return res.json({ message: "OK. Successfully processed payment!" });
@@ -249,7 +259,7 @@ const saveToZokalSheet = async (booking, body, status = "completed") => {
 /**
  * Send email invoice
  */
-const sendEmailInvoice = data => {
+const sendEmail = data => {
 	const { to, from, subject, cc, content } = data;
 
 	// Convert object to label and value
@@ -314,7 +324,8 @@ const sendEmailInvoice = data => {
 	data.res.render(
 		"emails/invoice",
 		{
-			content: htmlContent
+			content: htmlContent,
+			headingText: data.headingText
 		},
 		function(err, html) {
 			var mailOptions = {
