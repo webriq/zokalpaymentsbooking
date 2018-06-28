@@ -250,7 +250,7 @@ const saveToZokalSheet = async (booking, body, status = "completed") => {
  * Send email invoice
  */
 const sendEmailInvoice = data => {
-	const { to, from, subject, content } = data;
+	const { to, from, subject, cc, content } = data;
 
 	// Convert object to label and value
 	const formatDataAsLabelAndValue = obj => {
@@ -321,6 +321,7 @@ const sendEmailInvoice = data => {
 				to: to,
 				from: from || process.env.APP_EMAIL,
 				subject: subject || `${process.env.APP_NAME} | New Invoice Request`,
+				cc: cc || process.env.APP_EMAIL_RECIPIENTS,
 				html: html
 			};
 
