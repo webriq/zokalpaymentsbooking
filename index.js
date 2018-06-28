@@ -76,8 +76,6 @@ app.post("/processPayment", validateFormRequest, async (req, res) => {
 		return res.status(422).json({ errors: errors.array() });
 	}
 
-	console.log(req.body);
-
 	// Retrieve price from Zokal SpreadSheet API
 	const getBookingPriceById = id => {
 		return axios
@@ -93,12 +91,16 @@ app.post("/processPayment", validateFormRequest, async (req, res) => {
 			req.body.type === "individual" ? req.body.email : req.body.business_email,
 		additionalPersonsCount:
 			req.body.type === "individual"
-				? 1
+				? 0
 				: parseInt(req.body.additional_persons_count),
 		price: parseFloat(await getBookingPriceById(parseInt(req.body.id))),
-		stripeToken: req.body.stripeToken
+		stripeToken: req.body.stripeToken,
+		student_details: req.body.student_details,
+		additional_persons: req.body.additional_persons
 	};
-	const bookingTotalPrice = booking.price * booking.additionalPersonsCount;
+	// Individual equate to 1 and any additional persons will be counted to company
+	const bookingTotalPrice =
+		booking.price * (booking.additionalPersonsCount + 1);
 
 	// Determine request whether payment or invoice
 	const isInvoiceRequest =
@@ -136,7 +138,16 @@ app.post("/processPayment", validateFormRequest, async (req, res) => {
 				customer: customer.id,
 				description: `Payment for booking id: ${booking.id} with price of ${
 					booking.price
-				} for ${booking.additionalPersonsCount} person(s)`
+				} ${process.env.APP_BOOKING_CURRENCY || "AUD"}
+				 for ${
+						booking.type === "individual"
+							? `1 person`
+							: `1 student ${
+									booking.additionalPersonsCount > 1
+										? ` and ${booking.additionalPersonsCount} persons`
+										: `1 person`
+							  }`
+					}`
 			});
 		})
 		.then(charge => {
@@ -160,6 +171,33 @@ app.post("/processPayment", validateFormRequest, async (req, res) => {
  * @return {}                    [description]
  */
 const saveToZokalSheet = async (booking, body, status = "completed") => {
+	// Insert student details
+	if (booking.student_details) {
+		const studentData = {
+			first_name: body.student_details.first_name[0],
+			last_name: body.student_details.last_name[0],
+			email: body.student_details.email[0],
+			phone: body.student_details.phone[0],
+			gender: body.student_details.gender[0],
+			usi: body.student_details.usi[0]
+		};
+		const finalData = {
+			...body,
+			...{ price: booking.price }, // update price based on API data
+			...{ status: status }, // set status to complete as payment is done
+			...studentData
+		};
+
+		await axios
+			.post(`${bookingApiUrl}?sheetTitle=Bookings`, finalData)
+			.then(function(response) {
+				return response;
+			})
+			.catch(function(error) {
+				return error;
+			});
+	}
+
 	for (i = 0; i <= parseInt(booking.additionalPersonsCount) - 1; i++) {
 		const personData =
 			booking.type !== "individual"
@@ -188,22 +226,46 @@ const saveToZokalSheet = async (booking, body, status = "completed") => {
 				return error;
 			});
 	}
+
+	// Insert individual person data
+	if (booking.type === "individual") {
+		await axios
+			.post(`${bookingApiUrl}?sheetTitle=Bookings`, {
+				...body,
+				...{ price: booking.price },
+				...{ status: status }
+			})
+			.then(function(response) {
+				return response;
+			})
+			.catch(function(error) {
+				return error;
+			});
+	}
 };
 
 /**
  * Send email invoice
  */
 const sendEmailInvoice = data => {
-	console.log(data);
 	const { to, from, subject, content } = data;
 
 	// Convert object to label and value
 	const formatDataAsLabelAndValue = obj => {
 		var arr = [];
 		for (var key in obj) {
+			// when individual, remove additional_persons_count, skip
+			if (
+				obj.type === "individual" &&
+				obj.hasOwnProperty(key) &&
+				["additional_persons_count", "student_details"].includes(key)
+			) {
+				continue;
+			}
+
 			if (
 				obj.hasOwnProperty(key) &&
-				!["stripeToken", "additional_persons"].includes(key)
+				!["stripeToken", "additional_persons", "student_details"].includes(key)
 			) {
 				arr.push(
 					`<p><strong>${changeCase.titleCase(key)}</strong>: ${obj[key]}</p>`
@@ -211,17 +273,26 @@ const sendEmailInvoice = data => {
 			}
 		}
 
+		// student details
+		if (obj.hasOwnProperty("student_details")) {
+			for (var skey in obj["student_details"]) {
+				arr.push(
+					`<p><strong>Student ${changeCase.titleCase(skey)}</strong>: ${
+						obj["student_details"][skey][0]
+					}</p>`
+				);
+			}
+		}
+
 		// additional persons
-		for (i = 1; i <= obj.additional_persons_count; i++) {
+		for (i = 0; i < parseInt(obj.additional_persons_count); i++) {
 			for (var key2 in obj["additional_persons"]) {
 				if (obj["additional_persons"].hasOwnProperty(key2)) {
-					var currentIndex = i - 1;
+					var currentIndex = i + 1;
 					arr.push(
-						`<p><strong>Additional Person ${changeCase.titleCase(
+						`<p><strong>Additional Person ${currentIndex}: ${changeCase.titleCase(
 							key2
-						)} ${i}</strong>: ${
-							obj["additional_persons"][key2][currentIndex]
-						}</p>`
+						)}</strong>: ${obj["additional_persons"][key2][i]}</p>`
 					);
 				}
 			}
