@@ -19,6 +19,7 @@ const stripe = require("stripe")(
 app.use(helmet());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.set("view engine", "pug");
 
 /**
  * Allow cors only from the list in .env
@@ -116,7 +117,8 @@ app.post("/processPayment", validateFormRequest, async (req, res) => {
 				// Send email
 				sendEmailInvoice({
 					to: booking.email,
-					content: req.body
+					content: req.body,
+					res: res
 				});
 			});
 		return; // safeguard
@@ -307,21 +309,29 @@ const sendEmailInvoice = data => {
 		return obj;
 	};
 
-	var mailOptions = {
-		to: to,
-		from: from || process.env.APP_EMAIL,
-		subject: subject || `${process.env.APP_NAME} | New Invoice Request`,
-		html: `
-			<h3>Please see following details provided below:</h3>
-			${cleanUpData(formatDataAsLabelAndValue(content))}
-		`
-	};
-	mailer.sendMail(mailOptions, function(err) {
-		if (err) {
-			console.log(err);
-			return;
+	const htmlContent = cleanUpData(formatDataAsLabelAndValue(content));
+
+	data.res.render(
+		"emails/invoice",
+		{
+			content: htmlContent
+		},
+		function(err, html) {
+			var mailOptions = {
+				to: to,
+				from: from || process.env.APP_EMAIL,
+				subject: subject || `${process.env.APP_NAME} | New Invoice Request`,
+				html: html
+			};
+
+			mailer.sendMail(mailOptions, function(err) {
+				if (err) {
+					console.log(err);
+					return;
+				}
+			});
 		}
-	});
+	);
 };
 
 app.listen(process.env.PORT || 3000, () => {

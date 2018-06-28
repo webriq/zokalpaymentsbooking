@@ -19,6 +19,7 @@
     "express-validator": "^5.2.0",
     "helmet": "^3.12.1",
     "nodemailer": "^4.6.7",
+    "pug": "^2.0.3",
     "stripe": "^6.1.0"
   }
 }
