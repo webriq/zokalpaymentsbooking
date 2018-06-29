@@ -183,6 +183,9 @@ app.post("/processPayment", validateFormRequest, async (req, res) => {
  * @return {}                    [description]
  */
 const saveToZokalSheet = async (booking, body, status = "completed") => {
+	// Payment type
+	const payment_type = status === "completed" ? "payment" : "invoice";
+
 	// Insert student details
 	if (booking.student_details) {
 		const studentData = {
@@ -197,6 +200,7 @@ const saveToZokalSheet = async (booking, body, status = "completed") => {
 			...body,
 			...{ price: booking.price }, // update price based on API data
 			...{ status: status }, // set status to complete as payment is done
+			...{ payment_type: payment_type },
 			...studentData
 		};
 
@@ -226,6 +230,7 @@ const saveToZokalSheet = async (booking, body, status = "completed") => {
 			...body,
 			...{ price: booking.price }, // update price based on API data
 			...{ status: status }, // set status to complete as payment is done
+			...{ payment_type: payment_type },
 			...personData
 		};
 
@@ -245,7 +250,8 @@ const saveToZokalSheet = async (booking, body, status = "completed") => {
 			.post(`${bookingApiUrl}?sheetTitle=Bookings`, {
 				...body,
 				...{ price: booking.price },
-				...{ status: status }
+				...{ status: status },
+				...{ payment_type: payment_type }
 			})
 			.then(function(response) {
 				return response;
@@ -277,7 +283,12 @@ const sendEmail = data => {
 
 			if (
 				obj.hasOwnProperty(key) &&
-				!["stripeToken", "additional_persons", "student_details"].includes(key)
+				![
+					"stripeToken",
+					"additional_persons",
+					"student_details",
+					"form-name"
+				].includes(key)
 			) {
 				arr.push(
 					`<p><strong>${changeCase.titleCase(key)}</strong>: ${obj[key]}</p>`
