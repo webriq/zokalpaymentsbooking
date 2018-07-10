@@ -176,6 +176,20 @@ app.post("/processPayment", validateFormRequest, async (req, res) => {
 });
 
 /**
+ * POST /hireEquipment
+ */
+app.post("/hireEquipment", async (req, res) => {
+	await axios
+		.post(`${bookingApiUrl}?sheetTitle=EquipmentBooking`, req.body)
+		.then(function(response) {
+			return res.status(200);
+		})
+		.catch(function(error) {
+			return res.status(500).json(error);
+		});
+});
+
+/**
  * Save to Zokal SpreadSheet API Bookings
  *
  * @param  {Object} booking  Booking object containing ID, email, additionalPersonsCount, price, and StripeToken
