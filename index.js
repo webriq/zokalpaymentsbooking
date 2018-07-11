@@ -178,11 +178,11 @@ app.post("/processPayment", validateFormRequest, async (req, res) => {
 /**
  * POST /hireEquipment
  */
-app.post("/hireEquipment", async (req, res) => {
-	await axios
+app.post("/hireEquipment", (req, res) => {
+	return axios
 		.post(`${bookingApiUrl}?sheetTitle=EquipmentBooking`, req.body)
 		.then(function(response) {
-			return res.status(200);
+			return res.status(200).json({ message: "Success!" });
 		})
 		.catch(function(error) {
 			return res.status(500).json(error);
