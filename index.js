@@ -35,6 +35,8 @@ var corsOptions = {
 	}
 };
 app.use(cors(corsOptions));
+const hireEquipmentApiUrl =
+	"http://zokal-googlesheets-hire-api.webriq.com/sheet";
 const bookingApiUrl = "http://zokal-googlesheets-api.webriq.com/sheet";
 const bookingTypes = ["individual", "company"];
 
@@ -180,7 +182,7 @@ app.post("/processPayment", validateFormRequest, async (req, res) => {
  */
 app.post("/hireEquipment", (req, res) => {
 	return axios
-		.post(`${bookingApiUrl}?sheetTitle=EquipmentBooking`, req.body)
+		.post(`${hireEquipmentApiUrl}`, req.body)
 		.then(function(response) {
 			return res.status(200).json({ message: "Success!" });
 		})
