@@ -35,10 +35,10 @@ var corsOptions = {
 	}
 };
 app.use(cors(corsOptions));
-const hireEquipmentApiUrl =
-	"http://zokal-googlesheets-hire-api.webriq.com/sheet";
 const bookingApiUrl = "http://zokal-googlesheets-api.webriq.com/sheet";
 const bookingTypes = ["individual", "company"];
+const hireEquipmentApiUrl =
+	"http://zokal-googlesheets-hire-api.webriq.com/sheet";
 
 /**
  * Validate form submission through the following filters below
