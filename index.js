@@ -70,6 +70,17 @@ const validateFormRequest = [
 	})
 ];
 
+const hireEquipmentFormRequest = [
+	check("organization", "Organization is required!").exists(),
+	check("abn", "ABN is required!").exists(),
+	check("date_equipment", "Date Equipment is required!").exists(),
+	check(
+		"long_equipment",
+		"How long do you need the equipment is required!"
+	).exists(),
+	check("equipment", "Must select 1 equipment to hire!").exists()
+];
+
 /**
  * POST /processPayment
  */
@@ -180,7 +191,7 @@ app.post("/processPayment", validateFormRequest, async (req, res) => {
 /**
  * POST /hireEquipment
  */
-app.post("/hireEquipment", (req, res) => {
+app.post("/hireEquipment", hireEquipmentFormRequest, (req, res) => {
 	return axios
 		.post(`${hireEquipmentApiUrl}`, req.body)
 		.then(function(response) {
