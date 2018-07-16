@@ -192,6 +192,11 @@ app.post("/processPayment", validateFormRequest, async (req, res) => {
  * POST /hireEquipment
  */
 app.post("/hireEquipment", hireEquipmentFormRequest, (req, res) => {
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		return res.status(422).json({ errors: errors.array() });
+	}
+
 	return axios
 		.post(`${hireEquipmentApiUrl}`, req.body)
 		.then(function(response) {
